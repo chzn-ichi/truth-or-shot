@@ -1,0 +1,47 @@
+.host__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 40dvh;
+  overflow-y: auto;
+}
+
+.host__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 2px solid #2c1a42;
+  font-size: 1.0625rem;
+}
+
+.host__remove {
+  flex-shrink: 0;
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  color: #ff5c8a;
+  font: inherit;
+  font-size: 0.9375rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.host__remove:focus-visible {
+  outline: 3px solid #f6efe6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.host__empty {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #8d7aa8;
+}
+
+.host__error {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #ff5c8a;
+}

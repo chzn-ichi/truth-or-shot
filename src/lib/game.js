@@ -63,3 +63,70 @@ export async function joinRoom(code, name) {
 
   return room
 }
+
+const SAVED_KEY = 'truth-or-shot:room'
+
+export function saveRoomCode(code) {
+  try {
+    localStorage.setItem(SAVED_KEY, code)
+  } catch {
+    /* storage blocked, recovery just won't work */
+  }
+}
+
+export function clearSavedRoom() {
+  try {
+    localStorage.removeItem(SAVED_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+// Returns the saved room if this player is still part of it, otherwise null
+export async function restoreRoom() {
+  let code
+  try {
+    code = localStorage.getItem(SAVED_KEY)
+  } catch {
+    return null
+  }
+  if (!code) return null
+
+  const { data: sessionData } = await supabase.auth.getSession()
+  const user = sessionData.session?.user
+  if (!user) {
+    clearSavedRoom()
+    return null
+  }
+
+  const { data: room, error } = await supabase
+    .from('rooms')
+    .select()
+    .eq('code', code)
+    .maybeSingle()
+  if (error) return null // probably offline, keep the saved code and try again later
+  if (!room) {
+    clearSavedRoom()
+    return null
+  }
+
+  const { data: me, error: meError } = await supabase
+    .from('players')
+    .select('id')
+    .eq('room_id', room.id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (meError) return null
+  if (!me) {
+    clearSavedRoom()
+    return null
+  }
+
+  return room
+}
+
+
+export async function leaveRoom(roomId) {
+  const { error } = await supabase.rpc('leave_room', { p_room: roomId })
+  if (error) throw error
+}

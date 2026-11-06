@@ -233,3 +233,8 @@
     transition: none;
   }
 }
+
+.leave-link--host {
+  right: auto;
+  left: 1rem;
+}

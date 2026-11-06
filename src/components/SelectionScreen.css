@@ -210,3 +210,30 @@
     transition: none;
   }
 }
+
+
+.leave-link {
+  position: fixed;
+  top: max(0.75rem, env(safe-area-inset-top));
+  right: 1rem;
+  z-index: 10;
+  padding: 0.35rem 0.25rem;
+  border: 0;
+  background: none;
+  color: #8d7aa8;
+  font: inherit;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.9375rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.leave-link:hover {
+  color: #ff5c8a;
+}
+
+.leave-link:focus-visible {
+  outline: 3px solid #f6efe6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}

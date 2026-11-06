@@ -3,7 +3,7 @@ import { useGame } from '../hooks/useGame'
 import './GameScreen.css'
 import SelectionScreen from './SelectionScreen'
 
-export default function GameScreen({ room, players, userId }) {
+export default function GameScreen({ room, players, userId, onNextRound }) {
   const { submitted, submitAnswer, decisions, myAnswer: pickedAnswer, decide } = useGame(room, userId)
   const [draft, setDraft] = useState('')
   const [myAnswer, setMyAnswer] = useState(null)
@@ -35,15 +35,19 @@ export default function GameScreen({ room, players, userId }) {
   if (room.status === 'selecting' || room.status === 'results') {
     return (
         <SelectionScreen
-        room={room}
-        players={players}
-        userId={userId}
-        decisions={decisions}
-        myAnswer={pickedAnswer}
-        decide={decide}
+          room={room}
+          players={players}
+          userId={userId}
+          decisions={decisions}
+          myAnswer={pickedAnswer}
+          decide={decide}
+          isHost={userId === room.host_id}
+          onNextRound={onNextRound}
         />
     )
     }
+
+  const answeredCount = players.filter((p) => submitted.includes(p.user_id)).length
 
   return (
     <main className="game">
@@ -85,7 +89,7 @@ export default function GameScreen({ room, players, userId }) {
 
       <section className="game__block">
         <h2 className="game__subhead">
-          {submitted.length} of {players.length} answered
+          {answeredCount} of {players.length} answered
         </h2>
         <ul className="game__players">
           {players.map((p) => {

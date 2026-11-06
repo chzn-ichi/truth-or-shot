@@ -8,6 +8,7 @@ export function useLobby(initialRoom) {
   const [players, setPlayers] = useState([])
   const [questions, setQuestions] = useState([])
   const [userId, setUserId] = useState(null)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -24,7 +25,10 @@ export function useLobby(initialRoom) {
         supabase.from('custom_questions').select().eq('room_id', roomId).order('created_at'),
       ])
       if (!active) return
-      if (p.data) setPlayers(p.data)
+      if (p.data) {
+        setPlayers(p.data)
+        setLoaded(true)
+      }
       if (q.data) setQuestions(q.data)
     }
 
@@ -43,10 +47,12 @@ export function useLobby(initialRoom) {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
-        (payload) => setRoom(payload.new)
+        (payload) => {
+          setRoom(payload.new)
+          load() // players_version changes whenever someone leaves or is removed
+        }
       )
       .subscribe((status) => {
-        // Load once we're listening, so nothing is missed in between
         if (status === 'SUBSCRIBED') load()
       })
 
@@ -55,6 +61,9 @@ export function useLobby(initialRoom) {
       supabase.removeChannel(channel)
     }
   }, [roomId])
+
+  // True once we know the player list and we're no longer on it
+  const removed = loaded && !!userId && !players.some((p) => p.user_id === userId)
 
   const addQuestion = useCallback(
     async (text) => {
@@ -74,20 +83,54 @@ export function useLobby(initialRoom) {
   const startGame = useCallback(async () => {
     const used = room.used_questions ?? []
     const text = pickQuestion(
-        questions.map((q) => q.text),
-        used
+      questions.map((q) => q.text),
+      used
     )
     const { error } = await supabase
-        .from('rooms')
-        .update({
+      .from('rooms')
+      .update({
         status: 'answering',
         round_number: 1,
         current_question: text,
         used_questions: [...used, text],
-        })
-        .eq('id', roomId)
+      })
+      .eq('id', roomId)
     if (error) throw error
-    }, [roomId, questions, room.used_questions])
+  }, [roomId, questions, room.used_questions])
 
-  return { room, players, questions, userId, addQuestion, removeQuestion, startGame }
+  const nextRound = useCallback(async () => {
+    const text = pickQuestion(
+      questions.map((q) => q.text),
+      room.used_questions ?? []
+    )
+    const { error } = await supabase.rpc('next_round', { p_room: roomId, p_question: text })
+    if (error) throw error
+  }, [roomId, questions, room.used_questions])
+
+  const kickPlayer = useCallback(
+    async (targetId) => {
+      const { error } = await supabase.rpc('kick_player', { p_room: roomId, p_user: targetId })
+      if (error) throw error
+    },
+    [roomId]
+  )
+
+  const endGame = useCallback(async () => {
+    const { error } = await supabase.from('rooms').update({ status: 'ended' }).eq('id', roomId)
+    if (error) throw error
+  }, [roomId])
+
+  return {
+    room,
+    players,
+    questions,
+    userId,
+    removed,
+    addQuestion,
+    removeQuestion,
+    startGame,
+    nextRound,
+    kickPlayer,
+    endGame,
+  }
 }

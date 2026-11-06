@@ -1,0 +1,119 @@
+.confirm {
+  --plum: #1d0f2c;
+  --velvet: #2c1a42;
+  --paper: #f6efe6;
+  --gold: #ffc93c;
+  --pink: #ff5c8a;
+
+  box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  max-height: calc(100dvh - 3rem);
+  width: min(360px, calc(100% - 3rem));
+  padding: 0;
+  border: 2px solid var(--velvet);
+  border-radius: 20px;
+  background: var(--plum);
+  color: var(--paper);
+  font-family: 'Figtree', system-ui, sans-serif;
+  text-align: left;
+}
+
+.confirm *,
+.confirm *::before,
+.confirm *::after {
+  box-sizing: border-box;
+}
+
+.confirm::backdrop {
+  background: rgba(10, 4, 18, 0.75);
+}
+
+.confirm[open] {
+  animation: confirm-pop 0.2s ease-out;
+}
+
+@keyframes confirm-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.confirm__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+}
+
+.confirm__title {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', 'Figtree', sans-serif;
+  font-weight: 800;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--gold);
+}
+
+.confirm__message {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+.confirm__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.confirm__btn {
+  width: 100%;
+  height: 52px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.confirm__btn:active {
+  transform: scale(0.98);
+}
+
+.confirm__btn:focus-visible {
+  outline: 3px solid var(--paper);
+  outline-offset: 3px;
+}
+
+.confirm__btn--stay {
+  background: var(--gold);
+  color: var(--plum);
+}
+
+.confirm__btn--danger {
+  background: transparent;
+  border-color: var(--pink);
+  color: var(--pink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm[open] {
+    animation: none;
+  }
+  .confirm__btn {
+    transition: none;
+  }
+}

@@ -30,13 +30,16 @@ function Reel({ names, final, stopAfter, skip }) {
   )
 }
 
-export default function SelectionScreen({ room, players, userId, decisions, myAnswer, decide }) {
+export default function SelectionScreen({room, players, userId, decisions, myAnswer, decide, isHost, onNextRound,}) {
   const [skip] = useState(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
   )
   const [spun, setSpun] = useState(skip)
   const [deciding, setDeciding] = useState(false)
   const [error, setError] = useState(null)
+
+  const [advancing, setAdvancing] = useState(false)
+  const [nextError, setNextError] = useState(null)
 
   const pickedIds = room.picked_ids ?? []
   const picked = pickedIds
@@ -57,7 +60,23 @@ export default function SelectionScreen({ room, players, userId, decisions, myAn
   if (picked.length === 0) {
     return (
       <main className="pick">
-        <p className="pick__hint">Picking who’s on the spot…</p>
+        <p className="pick__round">Round {room.round_number}</p>
+        <p className="pick__question">{room.current_question}</p>
+        <p className="pick__hint">
+          {room.status === 'results'
+            ? 'Everyone who was on the spot left the game.'
+            : 'Picking who’s on the spot…'}
+        </p>
+        {room.status === 'results' && isHost && (
+          <button
+            type="button"
+            className="pick__btn pick__btn--reveal"
+            disabled={advancing}
+            onClick={handleNext}
+          >
+            {advancing ? 'Starting…' : 'Next round'}
+          </button>
+        )}
       </main>
     )
   }
@@ -73,6 +92,17 @@ export default function SelectionScreen({ room, players, userId, decisions, myAn
     } catch {
       setError('Couldn’t save your choice. Try again.')
       setDeciding(false)
+    }
+  }
+
+  async function handleNext() {
+    setNextError(null)
+    setAdvancing(true)
+    try {
+      await onNextRound()
+    } catch {
+      setNextError('Couldn’t start the next round. Try again.')
+      setAdvancing(false)
     }
   }
 
@@ -161,7 +191,25 @@ export default function SelectionScreen({ room, players, userId, decisions, myAn
           </ul>
 
           {room.status === 'results' && (
-            <p className="pick__hint">Everyone’s decided. The next round comes next.</p>
+            isHost ? (
+              <>
+                <button
+                  type="button"
+                  className="pick__btn pick__btn--reveal"
+                  disabled={advancing}
+                  onClick={handleNext}
+                >
+                  {advancing ? 'Starting…' : 'Next round'}
+                </button>
+                {nextError && (
+                  <p className="pick__error" role="alert">
+                    {nextError}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="pick__hint">Waiting for the host to start the next round…</p>
+            )
           )}
         </>
       )}

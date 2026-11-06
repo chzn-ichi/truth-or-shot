@@ -3,11 +3,12 @@ import './HomeScreen.css'
 
 // onCreateRoom(name) and onJoinRoom(code, name) are where the Supabase calls go.
 // Each can be async; the buttons show a loading state until it finishes.
-export default function HomeScreen({ onCreateRoom, onJoinRoom }) {
+export default function HomeScreen({ onCreateRoom, onJoinRoom, notice }) {
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(null) // 'create' | 'join' | null
   const [error, setError] = useState(null) // { field: 'name' | 'code' | 'form', message }
+
 
   const cleanName = name.trim()
 
@@ -61,6 +62,11 @@ export default function HomeScreen({ onCreateRoom, onJoinRoom }) {
 
   return (
     <main className="home">
+      {notice && (
+        <p className="notice" role="status">
+          {notice}
+        </p>
+      )}
       <header className="home__brand">
         <svg className="glass" viewBox="0 0 64 80" aria-hidden="true">
           <defs>
