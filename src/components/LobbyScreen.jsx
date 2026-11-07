@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLobby } from '../hooks/useLobby'
-import ConfirmModal from './ConfirmModal'
-import HostPanel from './HostPanel'
+import { useKeepAwake } from '../hooks/useKeepAwake'
+import { useSettings } from '../lib/settings'
+import { startMusic, stopMusic } from '../lib/music'
+import Avatar from './Avatar'
+import SettingsPanel from './SettingsPanel'
+import JoinRequests from './JoinRequests'
 import GameScreen from './GameScreen'
 import './LobbyScreen.css'
 
@@ -10,6 +14,7 @@ export default function LobbyScreen({ room: initialRoom, onLeave, onRemoved }) {
     room,
     players,
     questions,
+    requests,
     userId,
     removed,
     addQuestion,
@@ -18,24 +23,54 @@ export default function LobbyScreen({ room: initialRoom, onLeave, onRemoved }) {
     nextRound,
     kickPlayer,
     endGame,
+    setSkipAnimation,
+    respondJoin,
   } = useLobby(initialRoom)
+
+  const settings = useSettings()
+  useKeepAwake(settings.keepAwake)
 
   const [draft, setDraft] = useState('')
   const [copied, setCopied] = useState(false)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState(null) // { field: 'question' | 'start', message }
-  const [leaveOpen, setLeaveOpen] = useState(false)
-  const [hostOpen, setHostOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [notice, setNotice] = useState(null)
 
   // The host removed us: tell App so it can send us home
   useEffect(() => {
     if (removed) onRemoved()
   }, [removed, onRemoved])
 
+  // Back in the lobby after a running game: reset the button and explain why
+  const prevStatus = useRef(room.status)
+  useEffect(() => {
+    const prev = prevStatus.current
+    if (room.status === 'lobby') {
+      setStarting(false)
+      if (prev !== 'lobby' && prev !== 'ended') {
+        setNotice('Everyone else left, so the game went back to the lobby.')
+      }
+    }
+    prevStatus.current = room.status
+  }, [room.status])
+
+  // Music plays while you're inside a room and stops when you leave
+  useEffect(() => {
+    startMusic()
+    return () => stopMusic()
+  }, [])
+
   const isHost = userId === room.host_id
   const host = players.find((p) => p.user_id === room.host_id)
   const myQuestions = questions.filter((q) => q.user_id === userId)
   const canStart = players.length >= 2 // change to >= 1 to test solo
+
+  // Players who joined mid-game take part from the next round
+  const inRound = players.filter((p) => p.joined_round <= room.round_number)
+  const iAmWaiting = players.some(
+    (p) => p.user_id === userId && p.joined_round > room.round_number
+  )
 
   async function copyCode() {
     try {
@@ -64,6 +99,7 @@ export default function LobbyScreen({ room: initialRoom, onLeave, onRemoved }) {
   }
 
   async function handleStart() {
+    setNotice(null)
     setError(null)
     setStarting(true)
     try {
@@ -74,44 +110,34 @@ export default function LobbyScreen({ room: initialRoom, onLeave, onRemoved }) {
     }
   }
 
-  const leaveMessage =
-    room.status === 'lobby'
-      ? 'You can rejoin later with the room code.'
-      : 'You won’t be able to rejoin once the game has started.'
-
-  const leaveModal = (
-    <ConfirmModal
-      open={leaveOpen}
-      title="Leave this room?"
-      message={leaveMessage}
-      confirmLabel="Leave"
-      cancelLabel="Stay"
-      onCancel={() => setLeaveOpen(false)}
-      onConfirm={() => {
-        setLeaveOpen(false)
-        onLeave()
-      }}
-    />
-  )
-
-  const hostControls = isHost && (
+  const settingsUi = (
     <>
-      <button
-        type="button"
-        className="leave-link leave-link--host"
-        onClick={() => setHostOpen(true)}
-      >
-        Host controls
+      <button type="button" className="settings-link" onClick={() => setSettingsOpen(true)}>
+        Settings
       </button>
-      <HostPanel
-        open={hostOpen}
+      <SettingsPanel
+        open={settingsOpen}
+        code={room.code}
+        isHost={isHost}
+        inGame={room.status !== 'lobby'}
         players={players}
         userId={userId}
+        skipAnimation={!!room.skip_animation}
+        onSkipChange={setSkipAnimation}
         onKick={kickPlayer}
         onEndGame={endGame}
-        onClose={() => setHostOpen(false)}
+        onLeave={onLeave}
+        onClose={() => setSettingsOpen(false)}
       />
     </>
+  )
+
+  const joinRequestsUi = isHost && (
+    <JoinRequests
+      requests={requests}
+      inGame={room.status !== 'lobby'}
+      onRespond={respondJoin}
+    />
   )
 
   if (room.status === 'ended') {
@@ -131,29 +157,51 @@ export default function LobbyScreen({ room: initialRoom, onLeave, onRemoved }) {
   if (room.status !== 'lobby') {
     return (
       <>
-        <button type="button" className="leave-link" onClick={() => setLeaveOpen(true)}>
-          Leave
-        </button>
-        {leaveModal}
-        {hostControls}
-        <GameScreen
-          key={room.round_number}
-          room={room}
-          players={players}
-          userId={userId}
-          onNextRound={nextRound}
-        />
+        {settingsUi}
+        {joinRequestsUi}
+        {iAmWaiting ? (
+          <main className="lobby">
+            <h1 className="lobby__title">You’re in!</h1>
+            <p className="lobby__hint">
+              The host let you in. You’ll join as soon as the next round starts.
+            </p>
+            <section className="block">
+              <h2>Playing now ({inRound.length})</h2>
+              <ul className="players">
+                {inRound.map((p) => (
+                  <li key={p.id}>
+                    <span className="who">
+                      <Avatar id={p.avatar} />
+                      <span>{p.name}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </main>
+        ) : (
+          <GameScreen
+            key={room.round_number}
+            room={room}
+            players={inRound}
+            userId={userId}
+            onNextRound={nextRound}
+          />
+        )}
       </>
     )
   }
 
   return (
     <main className="lobby">
-      <button type="button" className="leave-link" onClick={() => setLeaveOpen(true)}>
-        Leave
-      </button>
-      {leaveModal}
-      {hostControls}
+      {settingsUi}
+      {joinRequestsUi}
+
+      {notice && (
+        <p className="notice" role="status">
+          {notice}
+        </p>
+      )}
 
       <header className="lobby__code">
         <span className="lobby__label">Room code</span>
@@ -170,9 +218,12 @@ export default function LobbyScreen({ room: initialRoom, onLeave, onRemoved }) {
         <ul className="players">
           {players.map((p) => (
             <li key={p.id}>
-              <span>
-                {p.name}
-                {p.user_id === userId && <em> (you)</em>}
+              <span className="who">
+                <Avatar id={p.avatar} />
+                <span>
+                  {p.name}
+                  {p.user_id === userId && <em> (you)</em>}
+                </span>
               </span>
               {p.user_id === room.host_id && <span className="tag">Host</span>}
             </li>

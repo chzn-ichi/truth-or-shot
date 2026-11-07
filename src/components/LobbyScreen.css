@@ -234,7 +234,46 @@
   }
 }
 
-.leave-link--host {
-  right: auto;
-  left: 1rem;
+.settings-link {
+  position: fixed;
+  top: max(0.75rem, env(safe-area-inset-top));
+  right: 1rem;
+  z-index: 10;
+  padding: 0.35rem 0.25rem;
+  border: 0;
+  background: none;
+  color: #8d7aa8;
+  font: inherit;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.9375rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.settings-link:hover {
+  color: #f6efe6;
+}
+
+.settings-link:focus-visible {
+  outline: 3px solid #f6efe6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+
+.lobby .notice {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  background: var(--velvet);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+
+.lobby .who {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
 }

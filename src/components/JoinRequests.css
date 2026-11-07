@@ -1,0 +1,115 @@
+.joinreq,
+.joinreq *,
+.joinreq *::before,
+.joinreq *::after {
+  box-sizing: border-box;
+}
+
+.joinreq {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: min(420px, calc(100% - 2rem));
+  max-height: 45dvh;
+  margin: 0 auto;
+  overflow-y: auto;
+  color: #f6efe6;
+  font-family: 'Figtree', system-ui, sans-serif;
+  text-align: left;
+  animation: joinreq-in 0.25s ease-out;
+}
+
+@keyframes joinreq-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.joinreq__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 2px solid #ff5c8a;
+  border-radius: 18px;
+  background: #2c1a42;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.joinreq__text {
+  min-width: 0;
+  font-size: 1rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.joinreq__text small {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.8125rem;
+  color: #8d7aa8;
+}
+
+.joinreq__btns {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.joinreq__btn {
+  flex: 1;
+  height: 46px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.joinreq__btn--yes {
+  background: #ffc93c;
+  color: #1d0f2c;
+}
+
+.joinreq__btn--no {
+  background: transparent;
+  border-color: #8d7aa8;
+  color: #f6efe6;
+}
+
+.joinreq__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.joinreq__btn:focus-visible {
+  outline: 3px solid #f6efe6;
+  outline-offset: 2px;
+}
+
+.joinreq__error {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: #2c1a42;
+  font-size: 0.875rem;
+  color: #ff5c8a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .joinreq {
+    animation: none;
+  }
+}

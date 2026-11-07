@@ -1,23 +1,33 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { buzz, playSound } from '../lib/sound'
 import './SelectionScreen.css'
+import Avatar from './Avatar'
 
-// One slot-machine window: flickers through names, then lands on `final`
-function Reel({ names, final, stopAfter, skip }) {
-  const [shown, setShown] = useState(skip ? final : names[0])
+
+function Reel({ names, final, stopAfter, skip, calm, first }) {
+  const [shown, setShown] = useState(skip ? final : calm ? '…' : names[0])
   const [done, setDone] = useState(skip)
 
   useEffect(() => {
-    if (skip) return
-    const spin = setInterval(() => {
-      setShown(names[Math.floor(Math.random() * names.length)])
-    }, 90)
+    if (skip) {
+      if (first) playSound('land')
+      return
+    }
+    // "calm" (reduce motion): no flickering names, but the same waiting time
+    const spin = calm
+      ? null
+      : setInterval(() => {
+          setShown(names[Math.floor(Math.random() * names.length)])
+          if (first) playSound('tick') // only one reel ticks, so it isn't a buzz
+        }, 90)
     const stop = setTimeout(() => {
-      clearInterval(spin)
+      if (spin) clearInterval(spin)
       setShown(final)
       setDone(true)
+      playSound('land')
     }, stopAfter)
     return () => {
-      clearInterval(spin)
+      if (spin) clearInterval(spin)
       clearTimeout(stop)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -31,9 +41,8 @@ function Reel({ names, final, stopAfter, skip }) {
 }
 
 export default function SelectionScreen({room, players, userId, decisions, myAnswer, decide, isHost, onNextRound,}) {
-  const [skip] = useState(
-    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
+  const [skip] = useState(() => !!room.skip_animation)
+  const [calm] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const [spun, setSpun] = useState(skip)
   const [deciding, setDeciding] = useState(false)
   const [error, setError] = useState(null)
@@ -56,6 +65,27 @@ export default function SelectionScreen({room, players, userId, decisions, myAns
     const t = setTimeout(() => setSpun(true), lastStop + 600)
     return () => clearTimeout(t)
   }, [skip, lastStop])
+
+  // Sound and buzz for the picked player once the spin finishes
+  useEffect(() => {
+    if (!spun) return
+    if (pickedIds.includes(userId) && !decisions.some((d) => d.user_id === userId)) {
+      playSound('picked')
+      buzz()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spun])
+
+  // A chime or a clink whenever a new decision arrives
+  const seenDecisions = useRef(new Set(decisions.map((d) => d.user_id)))
+  useEffect(() => {
+    for (const d of decisions) {
+      if (!seenDecisions.current.has(d.user_id)) {
+        seenDecisions.current.add(d.user_id)
+        playSound(d.choice === 'shot' ? 'shot' : 'reveal')
+      }
+    }
+  }, [decisions])
 
   if (picked.length === 0) {
     return (
@@ -127,6 +157,8 @@ export default function SelectionScreen({room, players, userId, decisions, myAns
             final={final}
             stopAfter={1800 + i * 800}
             skip={skip}
+            calm={calm}
+            first={i === 0}
           />
         ))}
       </div>
@@ -170,6 +202,7 @@ export default function SelectionScreen({room, players, userId, decisions, myAns
               if (!d) {
                 return (
                   <li key={p.id} className="pick__row pick__row--wait">
+                    <Avatar id={p.avatar} size={32} />
                     {p.name} is deciding…
                   </li>
                 )
@@ -177,13 +210,17 @@ export default function SelectionScreen({room, players, userId, decisions, myAns
               if (d.choice === 'shot') {
                 return (
                   <li key={p.id} className="pick__row">
+                    <Avatar id={p.avatar} size={32} />
                     🥃 {p.name} took a shot
                   </li>
                 )
               }
               return (
                 <li key={p.id} className="pick__reveal">
-                  <span className="pick__who">{p.name} revealed:</span>
+                  <span className="pick__who">
+                    <Avatar id={p.avatar} size={28} />
+                    {p.name} revealed:
+                  </span>
                   <p className="pick__said">{d.answer_text}</p>
                 </li>
               )

@@ -16,7 +16,7 @@ async function ensureUser() {
   return signedIn.user
 }
 
-export async function createRoom(name) {
+export async function createRoom(name, avatar) {
   const user = await ensureUser()
 
   // Retry in the unlikely case the random code is already taken
@@ -34,7 +34,7 @@ export async function createRoom(name) {
 
     const { error: playerError } = await supabase
       .from('players')
-      .insert({ room_id: room.id, user_id: user.id, name })
+      .insert({ room_id: room.id, user_id: user.id, name, avatar })
     if (playerError) throw playerError
 
     return room
@@ -42,7 +42,7 @@ export async function createRoom(name) {
   throw new Error('CODE_GENERATION_FAILED')
 }
 
-export async function joinRoom(code, name) {
+export async function joinRoom(code, name, avatar) {
   const user = await ensureUser()
 
   const { data: room, error } = await supabase
@@ -52,16 +52,28 @@ export async function joinRoom(code, name) {
     .maybeSingle()
   if (error) throw error
   if (!room) throw new Error('ROOM_NOT_FOUND')
-  if (room.status !== 'lobby') throw new Error('ROOM_STARTED')
+  if (room.status === 'ended') throw new Error('ROOM_ENDED')
 
-  const { error: playerError } = await supabase
+  // Already in this room (for example you lost the page): just go back in
+  const { data: me } = await supabase
     .from('players')
-    .insert({ room_id: room.id, user_id: user.id, name })
+    .select('id')
+    .eq('room_id', room.id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (me) return { room, pending: false }
 
-  // 23505 = you're already in this room (e.g. you refreshed), that's fine
-  if (playerError && playerError.code !== '23505') throw playerError
-
-  return room
+  // The server decides: straight in during the lobby, otherwise it asks the host
+  const { data: result, error: joinError } = await supabase.rpc('request_join', {
+    p_room: room.id,
+    p_name: name,
+    p_avatar: avatar,
+  })
+  if (joinError) {
+    if (joinError.message?.includes('ROOM_ENDED')) throw new Error('ROOM_ENDED')
+    throw joinError
+  }
+  return { room, pending: result === 'pending' }
 }
 
 const SAVED_KEY = 'truth-or-shot:room'
@@ -128,5 +140,10 @@ export async function restoreRoom() {
 
 export async function leaveRoom(roomId) {
   const { error } = await supabase.rpc('leave_room', { p_room: roomId })
+  if (error) throw error
+}
+
+export async function cancelJoin(roomId) {
+  const { error } = await supabase.rpc('cancel_join', { p_room: roomId })
   if (error) throw error
 }

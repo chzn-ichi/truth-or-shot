@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { playSound } from '../lib/sound'
 import { useGame } from '../hooks/useGame'
 import './GameScreen.css'
 import SelectionScreen from './SelectionScreen'
+import Avatar from './Avatar'
 
 export default function GameScreen({ room, players, userId, onNextRound }) {
   const { submitted, submitAnswer, decisions, myAnswer: pickedAnswer, decide } = useGame(room, userId)
@@ -9,6 +11,12 @@ export default function GameScreen({ room, players, userId, onNextRound }) {
   const [myAnswer, setMyAnswer] = useState(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(null)
+
+  // This screen is created fresh for every round, so this plays once per round
+  useEffect(() => {
+    playSound(room.round_number === 1 ? 'start' : 'round')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const hasAnswered = myAnswer !== null || submitted.includes(userId)
 
@@ -23,6 +31,7 @@ export default function GameScreen({ room, players, userId, onNextRound }) {
     setSending(true)
     try {
       await submitAnswer(text)
+      playSound('lock')
       setMyAnswer(text)
     } catch {
       setError('Couldn’t lock in your answer. Try again.')
@@ -96,7 +105,10 @@ export default function GameScreen({ room, players, userId, onNextRound }) {
             const done = submitted.includes(p.user_id)
             return (
               <li key={p.id}>
-                <span>{p.name}</span>
+                <span className="game__who">
+                  <Avatar id={p.avatar} size={32} />
+                  <span>{p.name}</span>
+                </span>
                 <span className={done ? 'game__done' : 'game__waiting'}>
                   {done ? 'Answered' : 'Typing…'}
                 </span>

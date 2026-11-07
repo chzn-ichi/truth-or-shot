@@ -2,11 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { pickQuestion } from '../lib/questions'
 
+// Requests older than this are hidden, in case the person closed their tab
+const REQUEST_WINDOW_MS = 10 * 60 * 1000
+
 export function useLobby(initialRoom) {
   const roomId = initialRoom.id
   const [room, setRoom] = useState(initialRoom)
   const [players, setPlayers] = useState([])
   const [questions, setQuestions] = useState([])
+  const [requests, setRequests] = useState([])
   const [userId, setUserId] = useState(null)
   const [loaded, setLoaded] = useState(false)
 
@@ -20,9 +24,18 @@ export function useLobby(initialRoom) {
     let active = true
 
     async function load() {
-      const [p, q] = await Promise.all([
+      const since = new Date(Date.now() - REQUEST_WINDOW_MS).toISOString()
+      const [p, q, j] = await Promise.all([
         supabase.from('players').select().eq('room_id', roomId).order('joined_at'),
         supabase.from('custom_questions').select().eq('room_id', roomId).order('created_at'),
+        // Only the host can read these, everyone else just gets an empty list
+        supabase
+          .from('join_requests')
+          .select()
+          .eq('room_id', roomId)
+          .eq('status', 'pending')
+          .gte('created_at', since)
+          .order('created_at'),
       ])
       if (!active) return
       if (p.data) {
@@ -30,6 +43,7 @@ export function useLobby(initialRoom) {
         setLoaded(true)
       }
       if (q.data) setQuestions(q.data)
+      if (j.data) setRequests(j.data)
     }
 
     const channel = supabase
@@ -42,6 +56,11 @@ export function useLobby(initialRoom) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'custom_questions', filter: `room_id=eq.${roomId}` },
+        load
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'join_requests', filter: `room_id=eq.${roomId}` },
         load
       )
       .on(
@@ -120,10 +139,39 @@ export function useLobby(initialRoom) {
     if (error) throw error
   }, [roomId])
 
+  const setSkipAnimation = useCallback(
+    async (value) => {
+      setRoom((r) => ({ ...r, skip_animation: value })) // update the toggle right away
+      const { error } = await supabase
+        .from('rooms')
+        .update({ skip_animation: value })
+        .eq('id', roomId)
+      if (error) {
+        setRoom((r) => ({ ...r, skip_animation: !value })) // put it back if it failed
+        throw error
+      }
+    },
+    [roomId]
+  )
+
+  const respondJoin = useCallback(
+    async (targetId, approve) => {
+      const { error } = await supabase.rpc('respond_join', {
+        p_room: roomId,
+        p_user: targetId,
+        p_approve: approve,
+      })
+      if (error) throw error
+      setRequests((list) => list.filter((r) => r.user_id !== targetId))
+    },
+    [roomId]
+  )
+
   return {
     room,
     players,
     questions,
+    requests,
     userId,
     removed,
     addQuestion,
@@ -132,5 +180,7 @@ export function useLobby(initialRoom) {
     nextRound,
     kickPlayer,
     endGame,
+    setSkipAnimation,
+    respondJoin,
   }
 }
