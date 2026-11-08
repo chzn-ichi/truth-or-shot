@@ -98,8 +98,8 @@
 }
 
 .wordmark__call {
-  font-size: 0.45em;
-  letter-spacing: 0;
+  font-size: 0.7em;
+  letter-spacing: -0.02em;
   color: var(--lilac);
 }
 
