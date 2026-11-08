@@ -1,16 +1,12 @@
 export const AVATARS = [
-  { id: 'fox', emoji: '🦊', color: '#ff9a55', label: 'Fox' },
-  { id: 'frog', emoji: '🐸', color: '#7be0a4', label: 'Frog' },
-  { id: 'panda', emoji: '🐼', color: '#d8d2e4', label: 'Panda' },
-  { id: 'cat', emoji: '🐱', color: '#ffc93c', label: 'Cat' },
-  { id: 'octopus', emoji: '🐙', color: '#ff5c8a', label: 'Octopus' },
-  { id: 'unicorn', emoji: '🦄', color: '#b79cff', label: 'Unicorn' },
-  { id: 'robot', emoji: '🤖', color: '#6cc7ff', label: 'Robot' },
-  { id: 'alien', emoji: '👽', color: '#a6e65a', label: 'Alien' },
-  { id: 'ghost', emoji: '👻', color: '#efe9f7', label: 'Ghost' },
-  { id: 'devil', emoji: '😈', color: '#ff6b5c', label: 'Devil' },
-  { id: 'taco', emoji: '🌮', color: '#f2b36b', label: 'Taco' },
-  { id: 'pizza', emoji: '🍕', color: '#ff8fb3', label: 'Pizza' },
+  { id: 'cat1', src: '/avatars/cat1.png', color: '#731f16', label: 'Cat 1' },
+  { id: 'cat2', src: '/avatars/cat2.png', color: '#a6551e', label: 'Cat 2' },
+  { id: 'cat3', src: '/avatars/cat3.png', color: '#a27b19', label: 'Cat 3' },
+  { id: 'cat4', src: '/avatars/cat4.png', color: '#1e8c4a', label: 'Cat 4' },
+  { id: 'cat5', src: '/avatars/cat5.png', color: '#1c76ae', label: 'Cat 5' },
+  { id: 'cat6', src: '/avatars/cat6.png', color: '#522fb2', label: 'Cat 6' },
+  { id: 'cat7', src: '/avatars/cat7.png', color: '#22839e', label: 'Cat 7' },
+  { id: 'cat8', src: '/avatars/cat8.png', color: '#aba4b9', label: 'Cat 8' },
 ]
 
 const BY_ID = Object.fromEntries(AVATARS.map((a) => [a.id, a]))

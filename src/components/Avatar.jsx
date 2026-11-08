@@ -10,7 +10,7 @@ export default function Avatar({ id, size = 36 }) {
       style={{ '--avatar-size': `${size}px`, background: a.color }}
       aria-hidden="true"
     >
-      {a.emoji}
+      <img src={a.src} alt="" draggable="false" />
     </span>
   )
 }

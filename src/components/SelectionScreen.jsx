@@ -186,7 +186,7 @@ export default function SelectionScreen({room, players, userId, decisions, myAns
                 disabled={deciding || !myAnswer}
                 onClick={() => choose('shot')}
               >
-                Take a shot 🥃
+                Take a shot <img className="shot-icon" src="/icons/shot.png" alt="" />
               </button>
               {error && (
                 <p className="pick__error" role="alert">
@@ -211,7 +211,8 @@ export default function SelectionScreen({room, players, userId, decisions, myAns
                 return (
                   <li key={p.id} className="pick__row">
                     <Avatar id={p.avatar} size={32} />
-                    🥃 {p.name} took a shot
+                    <img className="shot-icon" src="/icons/shot.png" alt="" />
+                    <span>{p.name} took a shot</span>
                   </li>
                 )
               }

@@ -254,3 +254,18 @@
   font-weight: 600;
   color: var(--lilac);
 }
+
+
+.pick .shot-icon {
+  width: 1.5em;
+  height: 1.5em;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.pick .pick__btn--shot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}

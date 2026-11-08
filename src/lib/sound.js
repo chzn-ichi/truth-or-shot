@@ -13,9 +13,11 @@ function getCtx() {
 
 // Real audio files. Anything missing falls back to the code-made sound of the same name.
 const SAMPLES = {
-  start: { url: '/sfx/start.mp3', gain: 1 }, // game starts
-  round: { url: '/sfx/start.mp3', gain: 1 }, // new round
+  start: { url: '/sfx/round.mp3', gain: 1 }, // game starts
+  round: { url: '/sfx/round.mp3', gain: 1 }, // new round
   lock: { url: '/sfx/lock.mp3', gain: 1 }, // answer locked in
+  shot: { url: '/sfx/shot.mp3', gain: 1 }, // someone takes a shot
+  picked: { url: '/sfx/picked.mp3', gain: 0.25 }, // you're on the spot
 }
 const MAX_SECONDS = 3 // longer clips get faded out and cut here
 
