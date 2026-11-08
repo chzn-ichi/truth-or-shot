@@ -81,28 +81,29 @@
   flex-direction: column;
   font-family: 'Bricolage Grotesque', 'Figtree', sans-serif;
   font-weight: 800;
-  font-size: clamp(4rem, 22vw, 6.25rem);
-  line-height: 0.88;
+  /* "Confessions" is the widest word, so the size is chosen to make it fit */
+  font-size: clamp(2.5rem, 13.5vw, 4rem);
+  line-height: 0.9;
   letter-spacing: -0.03em;
 }
 
-.wordmark__truth {
+.wordmark__row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2em;
+}
+
+.wordmark__last {
   color: var(--gold);
 }
 
-.wordmark__line {
-  display: flex;
-  align-items: baseline;
-  gap: 0.18em;
-}
-
-.wordmark__or {
-  font-size: 0.38em;
+.wordmark__call {
+  font-size: 0.45em;
   letter-spacing: 0;
   color: var(--lilac);
 }
 
-.wordmark__shot {
+.wordmark__confessions {
   color: var(--pink);
 }
 

@@ -123,11 +123,11 @@ export default function HomeScreen({ onCreateRoom, onJoinRoom, notice }) {
         </svg>
 
         <h1 className="wordmark">
-          <span className="wordmark__truth">Last</span>
-          <span className="wordmark__line">
-            <span className="wordmark__or">Call</span>
-            <span className="wordmark__shot">Confessions</span>
+          <span className="wordmark__row">
+            <span className="wordmark__last">Last</span>
+            <span className="wordmark__call">Call</span>
           </span>
+          <span className="wordmark__confessions">Confessions</span>
         </h1>
 
         <p className="pitch">

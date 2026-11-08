@@ -77,7 +77,7 @@
   background: var(--velvet);
   font-family: 'Bricolage Grotesque', 'Figtree', sans-serif;
   font-weight: 800;
-  font-size: 2rem;
+  font-size: clamp(1.4rem, 7vw, 2rem);
   white-space: nowrap;
   overflow: hidden;
   color: var(--lilac);
